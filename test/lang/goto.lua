@@ -21,6 +21,7 @@ do --- Basic goto and label semantics.
   expect("goto a; do ::a:: end", "'a'")
   expect("break", "break")
   expect("if x then break end", "break")
+  expect("repeat goto a break until true", "undefined label 'a'")
 
   -- Error: goto into variable scope.
   expect("goto a; local x; ::a:: local y", "'x'")
