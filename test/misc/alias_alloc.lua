@@ -1,5 +1,5 @@
 
-do
+do --- Alias analysis 1
   local t = {1}
   local x
   for i=1,100 do
@@ -10,7 +10,7 @@ do
   assert(x == 100 and t[1] == 100)
 end
 
-do
+do --- Alias analysis 2
   local t = {1}
   local x,y
   for i=1,100 do
@@ -22,7 +22,7 @@ do
   assert(x == 100 and y == 101)
 end
 
-do
+do --- Alias analysis 3
   local mt = {}
   local t = setmetatable({}, mt)
   local x
@@ -33,16 +33,14 @@ do
   end
 end
 
--- See also sink_alloc.lua
-do
+do --- See also sink_alloc.lua
   local x,k={1,2},{3,4}
   for i=1,100 do x = {x[1]+k[1], x[2]+k[2]} end
   assert(x[1] == 301)
   assert(x[2] == 402)
 end
 
--- FLOAD for tab.asize/tab.array crossing NEWREF.
-do
+do --- FLOAD for tab.asize/tab.array crossing NEWREF.
   local t = {1}
   for i=1,100 do
     local v = {}

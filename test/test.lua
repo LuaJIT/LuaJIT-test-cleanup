@@ -8,6 +8,7 @@ local own_file = debug.getinfo(1, "S").source:match"^@(.*)" or arg[0]
 local own_dir = own_file:match("^.*[/".. dirsep .."]")
 
 local ctest = require("ctest")
+local cpptest = require("cpptest")
 
 local function default_tags()
   local tags = {}

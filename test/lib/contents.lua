@@ -19,7 +19,7 @@ local function check(m, expected, exclude)
 end
 
 do --- base
-  check(_G, "_G:_VERSION:arg:assert:collectgarbage:coroutine:ctest:" ..
+  check(_G, "_G:_VERSION:arg:assert:collectgarbage:coroutine:cpptest:ctest:" ..
             "debug:dofile:error:getmetatable:io:ipairs:load:loadfile:" ..
             "math:next:os:package:pairs:pcall:print:rawequal:rawget:rawset:" ..
             "require:select:setmetatable:string:table:tonumber:tostring:type:xpcall",
@@ -143,7 +143,8 @@ do --- package.loaded
       loaded[k] = v
     end
   end
-  check(loaded, "_G:coroutine:ctest:debug:io:math:os:package:string:table", "bit:bit32:common:ffi:jit:table.new")
+  check(loaded, "_G:coroutine:cpptest:ctest:debug:io:math:os:package:string:table",
+                "bit:bit32:common:ffi:jit:table.new")
 end
 
 do --- bit +bit
