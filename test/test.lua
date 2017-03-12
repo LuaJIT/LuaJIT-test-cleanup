@@ -7,6 +7,8 @@ local dirsep = package.config:match"^(.-)\n"
 local own_file = debug.getinfo(1, "S").source:match"^@(.*)" or arg[0]
 local own_dir = own_file:match("^.*[/".. dirsep .."]")
 
+local ctest = require("ctest")
+
 local function default_tags()
   local tags = {}
   
@@ -178,6 +180,7 @@ end
 
 local function scan_tests(path, opts)
   if path:sub(-4, -4) == "." then
+    assert(path:sub(-4, -1) == ".lua")
     local f = assert(io_open(path, "rb"))
     local contents = f:read"*a"
     f:close()
