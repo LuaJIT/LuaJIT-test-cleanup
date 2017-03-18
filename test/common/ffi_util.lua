@@ -15,7 +15,7 @@ function ffi_util.checkfail(t, f)
 end
 
 function ffi_util.checktypes(t)
-  for i=1,1e9,3 do
+  for i=1,#t,3 do
     local tp = t[i+2]
     if not tp then break end
     local id = ffi.typeof(tp)

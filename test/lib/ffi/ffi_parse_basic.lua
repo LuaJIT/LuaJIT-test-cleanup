@@ -1,7 +1,12 @@
 local ffi = require("ffi")
 
-dofile("../common/ffi_util.inc")
+local ffi_util = require("common.ffi_util")
+local checkfail, checktypes = ffi_util.checkfail, ffi_util.checktypes
+local L = (ffi.abi("32bit") or ffi.abi("win")) and 4 or 8
+local P = ffi.abi("32bit") and 4 or 8
+local W = ffi.abi("win") and 2 or 4
 
+do --- FFI syntax errors
 checkfail{
   "",
   " ",
@@ -32,8 +37,10 @@ checkfail{
   "int double",
   "int;",
 }
+end
 
-checktypes{
+do --- FFI comments and sizeof(char)
+ffi_util.checktypes{
   1,	1,	"char",
   1,	1,	" \n\r\t\vchar \n\r\t\v",
   1,	1,	"ch\\\nar",
@@ -41,7 +48,9 @@ checktypes{
   1,	1,	"char /* abc */ const",
   1,	1,	"char // abc\n const",
 }
+end
 
+do --- properties of primitive types
 checktypes{
   nil,	1,	"void",
   1,	1,	"bool",
@@ -68,8 +77,9 @@ checktypes{
   16,	8,	"_Complex",
   16,	8,	"_Complex double",
 }
+end
 
--- mode/vector_size attributes
+do --- mode/vector_size attributes
 checktypes{
   1,	1,	"int __attribute__((mode(QI)))",
   2,	2,	"int __attribute__((mode(HI)))",
@@ -87,12 +97,9 @@ checktypes{
   32,	16,	"double __attribute__((vector_size(32)))",
   64,	16,	"double __attribute__((vector_size(64)))",
 }
+end
 
--- ABI-specific types:
-local L = (ffi.abi("32bit") or ffi.abi("win")) and 4 or 8
-local P = ffi.abi("32bit") and 4 or 8
-local W = ffi.abi("win") and 2 or 4
-
+do --- Properties of integer and pointer types
 checktypes{
   L,	L,	"long",
   L,	L,	"signed long",
@@ -101,10 +108,12 @@ checktypes{
   P,	P,	"int **",
   4,	4,	"int * __ptr32",
 }
+end
 
+do --- Properties of stdint.h types
 checktypes{
-  P,	P,	"ptrdiff_t",
   P,	P,	"size_t",
+  P,	P,	"ptrdiff_t" ,
   W,	W,	"wchar_t",
   1,	1,	"int8_t",
   2,	2,	"int16_t",
@@ -117,7 +126,9 @@ checktypes{
   P,	P,	"intptr_t",
   P,	P,	"uintptr_t",
 }
+end
 
+do --- Attributes dictating alignment
 checktypes{
   1,	8,	"char __attribute__((aligned(8)))",
   1,	8,	"char __attribute((aligned(8)))",
@@ -128,4 +139,5 @@ checktypes{
   1,	2,	"char __attribute__((aligned(8))) const __attribute__((aligned(2)))",
   1,	16,	"char __attribute__((aligned(8))) const __attribute__((aligned(16)))",
 }
+end
 

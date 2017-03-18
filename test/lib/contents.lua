@@ -19,7 +19,8 @@ local function check(m, expected, exclude)
 end
 
 do --- base
-  check(_G, "_G:_VERSION:arg:assert:collectgarbage:coroutine:cpptest:ctest:" ..
+  check(_G, "_G:_VERSION:arg:assert:collectgarbage:compat52" ..
+            ":coroutine:cpptest:ctest:" ..
             "debug:dofile:error:getmetatable:io:ipairs:load:loadfile:" ..
             "math:next:os:package:pairs:pcall:print:rawequal:rawget:rawset:" ..
             "require:select:setmetatable:string:table:tonumber:tostring:type:xpcall",

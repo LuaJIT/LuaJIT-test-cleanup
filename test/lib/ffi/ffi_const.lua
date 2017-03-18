@@ -10,7 +10,7 @@ typedef struct s_t {
 
 typedef const s_t cs_t;
 
-typedef enum en_t { EE } en_t;
+typedef enum en_t { EF } en_t;
 
 typedef struct pcs_t {
   int v;
@@ -19,7 +19,7 @@ typedef struct pcs_t {
 
 typedef struct foo_t {
   static const int cc = 17;
-  enum { CC = -37 };
+  enum { CD = -37 };
   int i;
   const int ci;
   int bi:8;
@@ -48,8 +48,8 @@ local x = foo_t()
 do --- constval
   assert(x.cc == 17)
   fails(function(x) x.cc = 1 end, x)
-  assert(x.CC == -37)
-  fails(function(x) x.CC = 1 end, x)
+  assert(x.CD == -37)
+  fails(function(x) x.CD = 1 end, x)
 end
 
 do --- fields

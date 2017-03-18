@@ -22,3 +22,5 @@ ffi_jit_conv.lua +ffi
 ffi_lex_number.lua +ffi
 ffi_metatype.lua +ffi
 ffi_new.lua +ffi
+ffi_parse_array.lua +ffi
+ffi_parse_basic.lua +ffi
