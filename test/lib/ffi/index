@@ -24,3 +24,4 @@ ffi_metatype.lua +ffi
 ffi_new.lua +ffi
 ffi_parse_array.lua +ffi
 ffi_parse_basic.lua +ffi
+ffi_jit_call.lua +ffi

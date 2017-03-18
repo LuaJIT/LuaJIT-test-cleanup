@@ -35,9 +35,9 @@ double __stdcall stdcall_dd(double a, double b);
 float __stdcall stdcall_ff(float a, float b);
 ]]
 
-local lib = ffi.load("../clib/ctest")
+local lib = ffi.load("./ctest.so")
 
-do
+do --- Basic calls
   local x
   for i=1,100 do
     x = lib.call_10i(-42, 17, 12345, 9987, -100, 11, 51, 0x12345678, 338, -78901234)
@@ -45,12 +45,13 @@ do
   assert(x == -42+17+12345+9987-100+11+51+0x12345678+338-78901234)
 end
 
-do
+do --- More basic calls
   for i=1,100 do
     pcall(lib.call_max, i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i)
   end
 end
 
+do --- 64-bit only
 if ffi.abi("64bit") then
   local y = ffi.cast("void *", 0x123456789abcdefLL)
   local x
@@ -60,8 +61,9 @@ if ffi.abi("64bit") then
   end
   assert(x == 0)
 end
+end
 
-do
+do --- Calls with 64-bit integers
   local x = 0
   for i=1,100 do
     x = x + lib.call_ij(100+i, i*0x300000002LL)
@@ -69,7 +71,7 @@ do
   assert(x == 0x3b2e0000623eLL)
 end
 
-do
+do --- Calls with floating-point numbers
   local x
   for i=1,100 do
     x = lib.call_10d(-42.5, 17.125, 12345.5, 9987, -100.625, 11, 51, 0x12345678, 338, -78901234.75)
@@ -77,7 +79,7 @@ do
   assert(x == -42.5+17.125+12345.5+9987-100.625+11+51+0x12345678+338-78901234.75)
 end
 
-do
+do --- More floating-point numbers
   local x
   for i=1,100 do
     x = lib.call_10f(-42.5, 17.125, 12345.5, 9987, -100.625, 11, 51, 0x123456, 338, -789012.75)
@@ -85,7 +87,7 @@ do
   assert(x == -42.5+17.125+12345.5+9987-100.625+11+51+0x123456+338-789012.75)
 end
 
-do
+do --- More FFI calls
   local x
   for i=-100,100 do
     if not lib.call_b(i) then x = i end
@@ -100,14 +102,14 @@ do
   assert(x == 90)
 end
 
-do
+do --- FFI tail calls
   local function tail(x)
     return lib.call_b(x)
   end
   for i=1,100 do local a,b,c = tail(1), tail(1), tail(1) end
 end
 
-do
+do --- FFI narrowing conversions
   local x = 0
   for i=0x01010080,0x010100ff do x = x + lib.call_i_i8(i) end
   assert(x == -8128)
@@ -134,7 +136,7 @@ do
   assert(x == 8380480)
 end
 
--- target-specific
+do --- target-specific
 if jit.arch == "x86" then
   for i=1,100 do assert(lib.fastcall_i(-42) == -41) end
   for i=1,100 do assert(lib.fastcall_ii(-42, 17) == -42+17) end
@@ -150,5 +152,6 @@ if jit.arch == "x86" then
     for i=1,100 do assert(lib.stdcall_dd(12.5, -3.25) == 12.5-3.25) end
     for i=1,100 do assert(lib.stdcall_ff(12.5, -3.25) == 12.5-3.25) end
   end
+end
 end
 
