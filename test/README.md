@@ -4,10 +4,16 @@ be run with any other Lua 5.1 or 5.2 interpreter.
 
 ## Running the test suite ##
 
-To run the default test suite, run `test.lua` using the Lua interpreter you
-wish to test, for example:
+To run the default test suite, run `build.sh` (\*nix) or `build.bat` (Windows,
+run from a Visual Studio command prompt) with the directory containing the
+include directories of the Lua interpreter to be tested.  Then run `test.lua`
+using the Lua interpreter you wish to test, for example:
 
+    $ ./build.sh ~/luajit-2.0/src
     $ ~/luajit-2.0/src/luajit test.lua
+
+You don't need to rerun `build.sh` or `build.bat` unless you change one of the
+C or C++ source files in `src/`.
 
 If the test suite passes, the final line printed to stdout will be
 `NNN passed`, and the exit code of the process will be zero. If any tests

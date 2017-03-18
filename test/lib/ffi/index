@@ -19,3 +19,6 @@ ffi_const.lua +ffi
 ffi_convert.lua +ffi
 ffi_enum.lua +ffi
 ffi_jit_conv.lua +ffi
+ffi_lex_number.lua +ffi
+ffi_metatype.lua +ffi
+ffi_new.lua +ffi

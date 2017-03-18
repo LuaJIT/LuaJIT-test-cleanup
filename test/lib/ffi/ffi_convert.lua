@@ -92,7 +92,7 @@ int _fileno(FILE *stream);
 
 local baz_t = ffi.typeof("baz_t")
 local sz = ffi.sizeof(baz_t)
-local x = baz_t ()
+local x = baz_t()
 local y = baz_t()
 ffi.fill(x, sz, 0xff)
 ffi.fill(y, sz, 0xee)

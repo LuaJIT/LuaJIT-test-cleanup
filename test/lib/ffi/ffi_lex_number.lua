@@ -1,7 +1,6 @@
 local ffi = require("ffi")
 
-dofile("../common/ffi_util.inc")
-
+local ffi_util = require("common.ffi_util")
 local function checklex(t)
   for i=1,1e9,2 do
     local s = t[i+1]
@@ -13,7 +12,7 @@ local function checklex(t)
     end
   end
 end
-
+do --- FFI C parser lexes numbers correctly
 checklex{
   "0LL",			"0ll",
   "0LL",			"0LL",
@@ -37,7 +36,7 @@ checklex{
   "0-0i",			"-0i",
 }
 
-checkfail({
+ffi_util.checkfail({
   "0l",
   "0lll",
   "0u",
@@ -48,4 +47,5 @@ checkfail({
   ".0ll",
   "0ii",
 }, function(s) assert(loadstring("return "..s)) end)
+end
 

@@ -1,6 +1,8 @@
 local ffi = require("ffi")
 
-dofile("../common/ffi_util.inc")
+local ffi_util = require("common.ffi_util")
+
+local fails = ffi_util.fails
 
 ffi.cdef[[
 typedef struct { int x; } idx1_t;
@@ -14,8 +16,11 @@ local function ptreq(a, b)
   return ffi.cast("void *", a) == ffi.cast("void *", b)
 end
 
-do
-  local nidx = {}
+local cs
+local s
+local nidx = {}
+
+do --- FFI metatypes can only be set once
   local tp = ffi.metatype("idx1_t", {
     __index = { foo = 99, method = function(c, v) return v end },
     __newindex = nidx,
@@ -23,29 +28,33 @@ do
 
   fails(function() ffi.metatype("idx1_t", {}) end)
 
-  local s = tp(1234)
+  s = tp(1234)
   assert(s.foo == 99)
   assert(s.x == 1234)
-  -- bad field in __index metatable
+end
+
+do --- bad field in __index metatable
   fails(function(s) local x = s.bar end, s)
   assert(s:method(123) == 123)
   s.bar = 42
   assert(nidx.bar == 42)
+end
 
-  local cs = ffi.new("const idx1_t", 9876)
+do --- write to const struct
+  cs = ffi.new("const idx1_t", 9876)
   assert(cs.foo == 99)
   assert(cs.x == 9876)
-  -- write to const struct
   fails(function(cs) cs.bar = 42 end, cs)
+end
 
+do --- write to const struct pointer
   local cp = ffi.new("const idx1_t *", cs)
   assert(cp.foo == 99)
   assert(cp.x == 9876)
-  -- write to const struct pointer
   fails(function(cp) cp.bar = 42 end, cp)
 end
 
-do
+do --- misc FFI metatables
   local uc, uk, uv
   local tp = ffi.metatype("idx2_t", {
     __index = function(c, k, x, y)
@@ -78,7 +87,7 @@ do
   fails(function(p) p[0] = 11 end, p)
 end
 
-do
+do --- more misc FFI metatype stuff
   local uc, uk, uv
   local ti, tn = {}, {}
   local tp = ffi.metatype("idx3_t", {
@@ -103,7 +112,7 @@ do
   uc, uk, uv = nil, nil, nil
 end
 
-do
+do --- FFI arithmatic metamethods
   local tp
   tp = ffi.metatype("arith_t", {
     __add = function(a, b) return tp(a.x+b.x, a.y+b.y) end,
@@ -174,7 +183,7 @@ do
   assert(x == 3000)
 end
 
-do
+do --- ffi.gc works
   local count = 0
   local tp = ffi.metatype("gc_t", {
     __gc = function(x) count = count + 1 end,
@@ -206,7 +215,7 @@ do
   assert(count == 103)
 end
 
-do
+do --- FFI metatable index works
   local tp = ffi.metatype([[
 struct {
   static const int Z42 = 42;
@@ -236,10 +245,9 @@ struct {
   assert(o.x == 5)
 end
 
-do
+do --- FFI structs can be used as __index tables
   local fb = ffi.new("struct { int x; }", 99)
   local xt = ffi.metatype("struct { }", { __index = fb })
   local o = xt()
   assert(o.x == 99)
 end
-

@@ -1,4 +1,3 @@
-local compat52 = table.pack
 local mt = { __len = function(o, o2)
   if compat52 then
     assert(o2 == o)
