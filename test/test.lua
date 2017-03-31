@@ -7,6 +7,9 @@ local dirsep = package.config:match"^(.-)\n"
 local own_file = debug.getinfo(1, "S").source:match"^@(.*)" or arg[0]
 local own_dir = own_file:match("^.*[/".. dirsep .."]")
 
+local ctest = require("ctest")
+local cpptest = require("cpptest")
+
 local function default_tags()
   local tags = {}
   
@@ -178,6 +181,7 @@ end
 
 local function scan_tests(path, opts)
   if path:sub(-4, -4) == "." then
+    assert(path:sub(-4, -1) == ".lua")
     local f = assert(io_open(path, "rb"))
     local contents = f:read"*a"
     f:close()
@@ -297,8 +301,11 @@ local function append_tree_to_plan(test_tree, opts, plan, prefix)
 end
 
 local function seal_globals()
+  compat52 = table.pack and true or false
   local sealed_mt = {__newindex = function()
     error("Tests should not mutate global state", 3)
+  end, __index = function(x, y)
+    --print(("Tests should not use undefined globals %q%q"):format(x, y))
   end}
   local function seal(t)
     if getmetatable(t) then return end
@@ -405,8 +412,8 @@ local opts = parse_args{...}
 if not opts then
   return
 end
-seal_globals()
 check_package_path()
+seal_globals()
 local test_tree = scan_tests(opts.root or own_dir or "", opts)
 local plan = append_tree_to_plan(test_tree, opts, {}, "")
 plan = mutate_plan(plan, opts)

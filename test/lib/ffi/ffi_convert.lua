@@ -2,7 +2,8 @@ local ffi = require("ffi")
 
 local ctest = require("ctest")
 
-dofile("../common/ffi_util.inc")
+local ffi_util = require("common.ffi_util")
+local fails = ffi_util.fails
 
 local tonumber = tonumber
 
@@ -32,15 +33,15 @@ typedef struct arrinc_t {
   int a[];
 } arrinc_t;
 
-typedef enum uenum_t {
+typedef enum uenum_t_ {
   UE0, UE71 = 71, UE72
-} uenum_t;
+} uenum_t_;
 
 typedef enum ienum_t {
   IE0, IEM12 = -12, IEM11
 } ienum_t;
 
-typedef struct foo_t {
+typedef struct baz_t {
   bool b;
   int8_t i8;
   uint8_t u8;
@@ -79,9 +80,9 @@ typedef struct foo_t {
   int si_guard;
   nest_t sn;
   uni_t ui;
-  uenum_t ue;
+  uenum_t_ ue;
   ienum_t ie;
-} foo_t;
+} baz_t;
 
 char *strcpy(char *dest, const char *src);
 typedef struct FILE FILE;
@@ -89,21 +90,23 @@ int fileno(FILE *stream);
 int _fileno(FILE *stream);
 ]]
 
-do
-  local foo_t = ffi.typeof("foo_t")
-  local sz = ffi.sizeof(foo_t)
-  local x = foo_t()
-  local y = foo_t()
-  ffi.fill(x, sz, 0xff)
-  ffi.fill(y, sz, 0xee)
+local baz_t = ffi.typeof("baz_t")
+local sz = ffi.sizeof(baz_t)
+local x = baz_t()
+local y = baz_t()
+ffi.fill(x, sz, 0xff)
+ffi.fill(y, sz, 0xee)
 
-  -- unknown member
+do --- unknown member
   fails(function(x) local a = x.bad end, x)
   fails(function(x) x.bad = 1 end, x)
-  -- too many initializers
-  fails(function(x) x.d = ffi.new("double", 1,2) end, x)
+end
 
-  -- conversions to bool
+do --- too many initializers
+  fails(function(x) x.d = ffi.new("double", 1,2) end, x)
+end
+
+do --- conversions to bool
   x.b = false
   assert(x.b == false)
   x.b = true
@@ -123,8 +126,9 @@ do
   assert(x.b == true)
   x.b = ffi.new("int32_t", 0)
   assert(x.b == false)
+end
 
-  -- conversions from bool
+do --- conversions from bool
   x.i32 = true
   assert(x.i32 == 1)
   x.i32 = false
@@ -137,13 +141,16 @@ do
   assert(x.d == 1)
   x.d = ffi.new("bool", false)
   assert(x.d == 0)
-  -- assignment of bool to other types is not allowed
+end
+
+do --- assignment of bool to other types is not allowed
   fails(function(x) x.cd = true end, x)
   fails(function(x) x.v4si = true end, x)
   fails(function(x) x.ai = true end, x)
   fails(function(x) x.s = true end, x)
+end
 
-  -- int to int conversions
+do --- int to int conversions
   x.i8 = 99
   assert(x.i8 == 99)
   x.i8 = -99
@@ -299,8 +306,9 @@ do
   assert(tonumber(x.u64) == 0xffeeddcc)
   x.u64 = ffi.new("int64_t", -0x7feeddcc*2^32)
   assert(tonumber(x.u64) == 2^64-0x7feeddcc*2^32)
+end
 
-  -- FP to int conversions, test for truncation
+do --- FP to int conversions, test for truncation
   x.i32 = 1.9
   assert(x.i32 == 1)
   x.i32 = 2.9
@@ -321,13 +329,16 @@ do
   assert(x.u32 == 1)
   x.u64 = 1.9
   assert(tonumber(x.u64) == 1)
+end
 
-  -- int to FP conversions (most tested above)
+do --- int to FP conversions (most tested above)
   x.f = ffi.new("int32_t", -17)
   assert(x.f == -17)
   x.d = ffi.new("int32_t", -17)
   assert(x.d == -17)
-  -- test for rounding due to precision loss
+end
+
+do --- test for rounding due to precision loss
   x.f = -1717986919
   assert(x.f == -1717986944)
   x.f = ffi.new("int32_t", 0x77777777)
@@ -335,16 +346,20 @@ do
   x.d = ffi.new("union { uint32_t u32[2]; uint64_t u64; }",
 		{{ 0x77777777, 0x77777777}}).u64
   assert(x.d == 0x77777777*2^32 + 0x77777800)
+end
 
-  -- complex initialization
+do --- complex initialization
   x.cd = ffi.new("complex", 9.125, -78.5)
   assert(x.cd.re == 9.125 and x.cd.im == -78.5)
   x.cd = ffi.new("complex", {9.125, -78.5})
   assert(x.cd.re == 9.125 and x.cd.im == -78.5)
-  -- too many initializers
-  fails(function(x) x.cd = ffi.new("complex", 1,2,3) end, x)
+end
 
-  -- conversions between FP and complex
+do --- too many initializers for complex
+  fails(function(x) x.cd = ffi.new("complex", 1,2,3) end, x)
+end
+
+do --- conversions between FP and complex
   x.cf = -17.25
   assert(x.cf.re == -17.25 and x.cf.im == 0)
   x.cf = ffi.new("complex float", -57.5) -- missing initializer
@@ -372,25 +387,29 @@ do
   assert(x.d == 9.125)
   x.d = ffi.new("complex double", 9.125, -78.5)
   assert(x.d == 9.125)
+end
 
-  -- conversions between int and complex
+do --- conversions between int and complex
   x.cd = ffi.new("int32_t", -138)
   assert(x.cd.re == -138 and x.cd.im == 0)
   x.i32 = ffi.new("complex", 9.125, -78.5)
   assert(x.i32 == 9)
+end
 
-  -- vector initialization
+do --- vector initialization
   x.v4si = ffi.new("int __attribute__((mode(__V4SI__)))", 1, 2, 3, 4)
   assert(x.v4si[0] == 1 and x.v4si[1] == 2 and
 	 x.v4si[2] == 3 and x.v4si[3] == 4)
   x.v2df = ffi.new("double __attribute__((mode(__V2DF__)))", {3.5, -6.75})
-  assert(x.v2df[0] == 3.5 and x.v2df[1] == -6.75)
-  -- too many initializers
+end
+
+do --- too many initializers for vector
   fails(function(x)
     x.v4si = ffi.new("int __attribute__((mode(__V4SI__)))", 1,2,3,4,5)
   end, x)
+end
 
-  -- conversions to vectors
+do --- conversions to vectors
   x.v4si = -17
   assert(x.v4si[0] == -17 and x.v4si[1] == -17 and
 	 x.v4si[2] == -17 and x.v4si[3] == -17)
@@ -401,14 +420,16 @@ do
   assert(x.v2df[0] == 12.5 and x.v2df[1] == 12.5)
   x.v2df = ffi.new("complex", 9.125, -78.5)
   assert(x.v2df[0] == 9.125 and x.v2df[1] == 9.125)
+end
 
-  -- assignment of same-sized but differently-typed vectors
+do --- assignment of same-sized but differently-typed vectors
   x.v16qi = 99
   x.v4si = 0x33333333
   x.v16qi = x.v4si
   assert(x.v16qi[0] == 0x33 and x.v16qi[15] == 0x33)
+end
 
-  -- string converted to enum
+do --- string converted to enum
   -- x.ue = -1 -- this is undefined on some architectures
   -- assert(x.ue == 0xffffffff)
   x.ue = "UE0"
@@ -417,52 +438,65 @@ do
   assert(x.ue == 72)
   x.ie = -1
   assert(x.ie == -1)
-  x.ie = "IE0"
-  assert(x.ie == 0)
   x.ie = "IEM11"
   assert(x.ie == -11)
+  x.ie = "IE0"
+  assert(x.ie == 0)
 
   x.pi = x.pi
-  -- assignment to pointer with higher qualifiers is ok
+end
+
+do --- assignment to pointer with higher qualifiers is ok
   x.pci = x.pi
   x.pvi = x.pi
-  -- assignment to pointer with lower qualifiers is not ok
+end
+
+do --- assignment to pointer with lower qualifiers is not ok
   fails(function(x) x.pi = x.pci end, x)
   fails(function(x) x.pi = x.pvi end, x)
   fails(function(x) x.pci = x.pvi end, x)
   fails(function(x) x.pvi = x.pci end, x)
-  -- assignment of pointers with incompatible child types is not ok
+end
+
+do --- assignment of pointers with incompatible child types is not ok
   fails(function(x) x.ppi = x.ai end, x)
   fails(function(x) x.ppi = x.pi end, x)
   fails(function(x) x.ppv = x.ppi end, x)
-  -- qualifiers of child types must match, higher qualifiers not ok
+end
+
+do --- qualifiers of child types must match, higher qualifiers not ok
   fails(function(x) x.ppci = x.ppi end, x)
   fails(function(x) x.ppi = x.ppci end, x)
+end
 
-  -- pointer/int conversions are not allowed by default
+do --- pointer/int conversions are not allowed by default
   fails(function(x) x.pi = 1 end, x)
   fails(function(x) x.i32 = x.pi end, x)
   assert(tonumber(x.pi) == nil)
   assert(tonumber(x.ai) == nil)
   assert(tonumber(x.si) == nil)
+end
 
-  -- but pointer/int casts are allowed
+do --- but pointer/int casts are allowed
   x.pi = ffi.cast("int *", ffi.new("int32_t", 0x12345678))
   x.i32 = ffi.cast("int32_t", x.pi)
   assert(x.i32 == 0x12345678)
   x.pi = ffi.cast("int *", 1234560.3)
   x.i32 = ffi.cast("int32_t", x.pi)
-  assert(x.i32 == 1234560)
-  -- bad cast from non-TValue double to pointer
+end
+
+do --- bad cast from non-TValue double to pointer
   fails(function(x)
     ffi.cast("int *", ffi.new("double", 1.5))
   end, x)
+end
 
-  -- nil sets a pointer to NULL
+do --- nil sets a pointer to NULL
   x.pi = nil
   assert(tonumber(ffi.cast("uintptr_t", x.pi)) == 0)
+end
 
-  -- userdata and lightuserdata are treated as void *
+do --- userdata and lightuserdata are treated as void *
   do
     local u = newproxy()
     local uaddr = _G.tonumber(string.match(tostring(u), "(0x.*)"))
@@ -471,8 +505,9 @@ do
     x.pi = ctest.lightud(12345678)
     assert(tonumber(ffi.cast("uintptr_t", x.pi)) == 12345678)
   end
+end
 
-  -- io.* file converts to file handle (as a void *)
+do --- io.* file converts to file handle (as a void *)
   if ffi.abi("win") then
     assert(ffi.C._fileno(io.stdout) == 1)
     assert(ffi.C._fileno(io.stderr) == 2)
@@ -486,8 +521,9 @@ do
     for i=1,100 do x = ffi.C.fileno(io.stderr) end
     assert(x == 2)
   end
+end
 
-  -- truncation/extension of __ptr32
+do --- truncation/extension of __ptr32
   if ffi.abi("64bit") then
     x.pi = ffi.cast("int *", 15*2^32+0x12345678)
     assert(tonumber(ffi.cast("uintptr_t", x.pi)) == 15*2^32+0x12345678)
@@ -497,8 +533,9 @@ do
     x.pi = x.p32i
     assert(tonumber(ffi.cast("uintptr_t", x.pi)) == 0x12345678)
   end
+end
 
-  -- reference initialization
+do --- reference initialization
   do
     x.ai[0] = 712
     local ri = ffi.new("int &", x.ai)
@@ -506,24 +543,29 @@ do
     local ra = ffi.new("int (&)[10]", ffi.cast("int (*)[10]", x.ai))
     assert(ra[0] == 712)
   end
+end
 
-  -- ffi.sizeof follows references
+do --- ffi.sizeof follows references
   assert(ffi.sizeof(x.ai) == 4*10)
   -- ffi.offsetof follows references
   assert(ffi.offsetof(x.s, "v") == 0)
   assert(ffi.offsetof(x.s, "w") == 4)
+end
 
-  -- ffi.fill writes the right amount
+do --- ffi.fill writes the right amount
   ffi.fill(x.ai2, ffi.sizeof(x.ai2), 0x72)
   ffi.fill(x.ai, ffi.sizeof(x.ai), 0x13)
   assert(x.ai[0] == 0x13131313)
   assert(x.ai[9] == 0x13131313)
   assert(x.ai2[0] == 0x72727272)
   assert(x.ai2[9] == 0x72727272)
+end
 
-  -- array cannot be assigned a pointer
+do --- array cannot be assigned a pointer
   fails(function(x) x.ai = x.pi end, x)
-  -- but pointer can be assigned the address of an array
+end
+
+do --- but pointer can be assigned the address of an array
   x.pi = x.ai2
   assert(x.pi[0] == 0x72727272)
   assert(x.pi[9] == 0x72727272)
@@ -536,7 +578,9 @@ do
   -- reflected via pointer, too
   assert(x.pi[0] == 0x72727272)
   assert(x.pi[9] == 0x72727272)
-  -- mismatched type or size in array copy
+end
+
+do --- mismatched type or size in array copy
   fails(function(x) x.ai = x.ac end, x)
   fails(function(x) x.ai = ffi.new("int[20]") end, x)
   fails(function(x) x.ai = ffi.new("arrinc_t").a end, x)
@@ -547,10 +591,13 @@ do
   x.s.w = 0x789abcde
   assert(x.s.v == 0x12345678)
   assert(x.s.w == 0x789abcde)
+end
 
-  -- struct cannot be assigned a pointer
+do --- struct cannot be assigned a pointer
   fails(function(x) x.s = x.ps end, x)
-  -- but pointer can be assigned the address of a struct
+end
+
+do --- but pointer can be assigned the address of a struct
   x.ps = x.s
   assert(x.ps.v == 0x12345678)
   assert(x.ps.w == 0x789abcde)
@@ -563,12 +610,14 @@ do
   -- reflected via pointer, too
   assert(x.ps.v == 0x59595959)
   assert(x.ps.w == 0x59595959)
+end
 
-  -- structs must be identical, structural equivalence is not enough
+do --- structs must be identical, structural equivalence is not enough
   fails(function(x) x.ps = x.sx end, x)
   fails(function(x) x.s = x.sx end, x)
+end
 
-  -- string copy to arrays
+do --- string copy to arrays
   x.ac_guard = 99
   ffi.fill(x.ac, 10, 0x37)
   x.ac = "ABCD"
@@ -584,27 +633,30 @@ do
   assert(x.ac[9] == 65+9)
   x.ac = "ABCDEFGHIJKLM"
   assert(x.ac[8] == 65+8)
-  assert(x.ac[9] == 65+9)
-  do -- copy to a[?]
-    local vx = ffi.new("struct { char ac[?]; }", 20)
-    ffi.fill(vx.ac, 20, 0x37)
-    vx.ac = "ABCDEFGHI"
-    assert(vx.ac[8] == 65+8)
-    assert(vx.ac[9] == 0)
-  end
-  do -- copy to a[0]
-    local vx = ffi.new("union { char ac[0]; char c[20]; }")
-    ffi.fill(vx.ac, 20, 0x37)
-    vx.ac = "ABCDEFGHI"
-    assert(vx.ac[8] == 65+8)
-    assert(vx.ac[9] == 0)
-  end
-  -- mismatched type or size in string copy
-  fails(function(x) x.i32 = "ABCD" end, x)
-  fails(function(x) x.ai = "ABCD" end, x)
-  assert(x.ac_guard == 99) -- Check guard
+end
 
-  -- array initialization
+do --- copy to a[?]
+  local vx = ffi.new("struct { char ac[?]; }", 20)
+  ffi.fill(vx.ac, 20, 0x37)
+  vx.ac = "ABCDEFGHI"
+  assert(vx.ac[8] == 65+8)
+  assert(vx.ac[9] == 0)
+end
+do --- copy to a[0]
+  local vx = ffi.new("union { char ac[0]; char c[20]; }")
+  ffi.fill(vx.ac, 20, 0x37)
+  vx.ac = "ABCDEFGHI"
+  assert(vx.ac[8] == 65+8)
+  assert(vx.ac[9] == 0)
+end
+
+do --- mismatched type or size in string copy
+fails(function(x) x.i32 = "ABCD" end, x)
+fails(function(x) x.ai = "ABCD" end, x)
+assert(x.ac_guard == 99) -- Check guard
+end
+
+do --- array initialization
   x.ai = ffi.new("int[10]") -- zero fill
   for i=0,9 do assert(x.ai[i] == 0) end
   x.ai = ffi.new("int[10]", -67) -- replicate first element
@@ -617,25 +669,28 @@ do
   for i=0,9 do assert(x.ai[i] == i+1) end
   x.ai = ffi.new("int[10]", {1,2,3,4,5,6,7,8,9,10})
   for i=0,9 do assert(x.ai[i] == i+1) end
-  -- VLA initialization
-  do
-    local v = ffi.new("int[?]", 4)
-    for i=0,3 do assert(v[i] == 0) end
-    local v = ffi.new("int[?]", 4, 833)
-    for i=0,3 do assert(v[i] == 833) end
-    local v = ffi.new("int[?]", 4, 12, -9)
-    assert(v[0] == 12 and v[1] == -9 and v[2] == 0 and v[3] == 0)
-    local v = ffi.new("int[?]", 4, 1,2,3,4)
-    assert(v[0] == 1 and v[1] == 2 and v[2] == 3 and v[3] == 4)
-  end
-  -- too many initializers
+end
+
+do --- VLA initialization
+  local v = ffi.new("int[?]", 4)
+  for i=0,3 do assert(v[i] == 0) end
+  local v = ffi.new("int[?]", 4, 833)
+  for i=0,3 do assert(v[i] == 833) end
+  local v = ffi.new("int[?]", 4, 12, -9)
+  assert(v[0] == 12 and v[1] == -9 and v[2] == 0 and v[3] == 0)
+  local v = ffi.new("int[?]", 4, 1,2,3,4)
+  assert(v[0] == 1 and v[1] == 2 and v[2] == 3 and v[3] == 4)
+end
+
+do --- too many initializers
   fails(function(x) x.ai = {1,2,3,4,5,6,7,8,9,10,11} end, x)
   for i=0,9 do assert(x.ai[i] == i+1) end -- but it's partially executed
   fails(function(x)
     local v = ffi.new("int[?]", 4, 1,2,3,4,5)
   end, x)
+end
 
-  -- struct initialization
+do --- struct initialization
   x.sn = ffi.new("nest_t") -- zero fill
   assert(x.sn.e.e2 == 0)
   x.sn = ffi.new("nest_t", 1,2) -- remainder filled with zero
@@ -650,27 +705,32 @@ do
   assert(x.sn.a == 1 and x.sn.b == 2 and x.sn.c == 3 and x.sn.d == 4)
   assert(x.sn.e.e1 == 5 and x.sn.e.e2 == 6)
   assert(x.sn.f[0] == 7 and x.sn.f[1] == 8)
-  -- VLS initialization
-  do
-    local v = ffi.new("struct { int x; int a[?]; }", 4)
-    assert(v.x == 0)
-    for i=0,3 do assert(v.a[i] == 0) end
-    local v = ffi.new("struct { int x; int a[?]; }", 4, 9, {833})
-    assert(v.x == 9)
-    -- NYI: fill up VLA in VLS. currently seen as indefinite length
-    -- for i=0,3 do assert(v.a[i] == 833) end
-    assert(v.a[0] == 833 and v.a[1] == 0 and v.a[2] == 0 and v.a[3] == 0)
-  end
-  -- no multi-value init beyond first level
+end
+
+do --- VLS initialization
+  local v = ffi.new("struct { int x; int a[?]; }", 4)
+  assert(v.x == 0)
+  for i=0,3 do assert(v.a[i] == 0) end
+  local v = ffi.new("struct { int x; int a[?]; }", 4, 9, {833})
+  assert(v.x == 9)
+  -- NYI: fill up VLA in VLS. currently seen as indefinite length
+  -- for i=0,3 do assert(v.a[i] == 833) end
+  assert(v.a[0] == 833 and v.a[1] == 0 and v.a[2] == 0 and v.a[3] == 0)
+end
+
+do --- no multi-value init beyond first level
   fails(function(x)
     x.sn = ffi.new("nest_t", 1,2,3,4,5,6,7,8)
   end, x)
-  -- too many initializers
+end
+
+do --- too many initializers
   fails(function(x)
     x.sn = ffi.new("nest_t", 1,2,3,4,{5,6},{7,8}, 9)
   end, x)
+end
 
-  -- union initialization
+do --- union initialization
   x.ui = ffi.new("uni_t") -- zero fill
   assert(x.ui.a == 0 and x.ui.b == 0 and x.ui.c == 0)
   x.ui = ffi.new("uni_t", 255) -- initialize first field, remainder is zero
@@ -679,15 +739,18 @@ do
   else
     assert(x.ui.a == -1 and x.ui.b == -256 and x.ui.c == -16777216)
   end
-  -- too many initializers
+end
+
+do --- too many initializers
   fails(function(x)
     x.sn = ffi.new("uni_t", 1,2)
   end, x)
   fails(function()
     ffi.new("union { struct { int x; }; int y; }", 1,2)
   end)
+end
 
-  -- table converted to array
+do --- table converted to array
   ffi.fill(x.ai, ffi.sizeof(x.ai), 0x13)
   x.ai_guard = 99
   x.ai = {} -- zero fill
@@ -701,8 +764,9 @@ do
   assert(x.ai[1] == -27)
   for i=2,9 do assert(x.ai[i] == 0) end
   assert(x.ai_guard == 99) -- Check guard
+end
 
-  -- table converted to struct
+do --- table converted to struct
   ffi.fill(x.si, ffi.sizeof(x.si), 0x74)
   x.si_guard = 97
   -- convert from array part
@@ -724,8 +788,9 @@ do
   x.si = {b = 12, 5, 6, 7} -- hash part ignored if array part exists
   assert(x.si.a == 5 and x.si.b == 6 and x.si.c == 7)
   assert(x.si_guard == 97) -- Check guard
+end
 
-  -- table converted to struct with transparent/nested structs and arrays
+do --- table converted to struct with transparent/nested structs and arrays
   ffi.fill(x.sn, ffi.sizeof(x.sn), 0x74)
   x.sn = {} -- zero fill
   assert(x.sn.e.e2 == 0)
@@ -737,8 +802,9 @@ do
   assert(x.sn.a == 0 and x.sn.b == 0 and x.sn.c == 10 and x.sn.d == 0)
   assert(x.sn.e.e1 == 11 and x.sn.e.e2 == 12)
   assert(x.sn.f[0] == 13 and x.sn.f[1] == 14)
+end
 
-  -- table converted to union
+do --- table converted to union
   ffi.fill(x.ui, ffi.sizeof(x.ui), 0x58)
   x.ui = {} -- zero fill
   assert(x.ui.a == 0 and x.ui.b == 0 and x.ui.c == 0)
@@ -754,22 +820,22 @@ do
   else
     assert(x.ui.a == -1 and x.ui.b == -1 and x.ui.c == -65536)
   end
+end
 
-  -- copy constructor
-  do
-    x.s.v = 1; x.s.w = 2
-    local s = ffi.new("bar_t", x.s)
-    assert(s.v == 1 and s.w == 2)
-    for i=0,9 do x.ai[i] = i end
-    local a = ffi.new("int[10]", x.ai)
-    for i=0,9 do assert(a[i] == i) end
-  end
+do --- copy constructor
+  x.s.v = 1; x.s.w = 2
+  local s = ffi.new("bar_t", x.s)
+  assert(s.v == 1 and s.w == 2)
+  for i=0,9 do x.ai[i] = i end
+  local a = ffi.new("int[10]", x.ai)
+  for i=0,9 do assert(a[i] == i) end
+end
 
-  -- assignment to function pointer
+do --- assignment to function pointer
   x.ppf = ffi.C.strcpy
 end
 
-do
+do --- FFI GC
   collectgarbage()
   local oc = collectgarbage("count")
   local cd = ffi.new"struct { struct { int a; } x;}"
@@ -783,5 +849,11 @@ do
     assert(nc < oc + 200, "GC step missing for cdata __index")
     jit.off(f)
   end
+end
+
+do --- FFI gcstep recursive
+  local stream = io.open("lib/ffi/ffi_gcstep_recursive.lua", "r")
+  local func = assert(load(function(x) stream:read('*all') end))
+  func()
 end
 

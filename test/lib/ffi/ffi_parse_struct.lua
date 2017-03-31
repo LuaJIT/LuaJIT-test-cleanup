@@ -1,7 +1,13 @@
 local ffi = require("ffi")
 
-dofile("../common/ffi_util.inc")
+local ffi_util = require("common.ffi_util")
+local checkfail, checktypes, fails =
+  ffi_util.checkfail, ffi_util.checktypes, ffi_util.fails
 
+local P = ffi.sizeof("void *")
+local A = (ffi.arch == "x86" and not ffi.abi("win")) and 4 or 8
+
+do --- Invalid FFI declarations rejected
 checkfail{
   "struct",
   "struct {",
@@ -22,30 +28,31 @@ checkfail{
   "union { int x(void); }",
   "union recursive1 { union recursive1 { } x; }",
 }
+end
 
 -- NYI: rollback doesn't recover struct state
 -- ffi.cdef("struct zzz")
 -- fails(ffi.cdef, "struct zzz { int")
 -- ffi.cdef("struct zzz { int x; }")
 
-ffi.cdef("struct foo; typedef struct foo foo_t;")
-assert(ffi.sizeof("struct foo") == nil)
-assert(ffi.sizeof("foo_t") == nil)
-ffi.cdef("struct foo { int x,y; };")
-assert(ffi.sizeof("struct foo") == 8)
-assert(ffi.sizeof("foo_t") == 8)
-assert(ffi.sizeof(ffi.typeof("struct foo")) == 8)
-assert(ffi.sizeof(ffi.typeof("foo_t")) == 8)
-ffi.cdef("struct foo;")
-fails(ffi.cdef, "struct foo {};")
-fails(ffi.cdef, "union foo;")
-fails(ffi.cdef, "union foo {};")
-fails(ffi.cdef, "enum foo;")
-fails(ffi.cdef, "enum foo { ZZZ1 };")
+do --- FFI sizeof on opaque types
+ffi.cdef("struct $; typedef struct $ foo_t_;", 'foo_', 'foo_')
+assert(ffi.sizeof("struct foo_") == nil)
+assert(ffi.sizeof("foo_t_") == nil)
+ffi.cdef("struct foo_ { int x,y; };")
+assert(ffi.sizeof("struct foo_") == 8)
+assert(ffi.sizeof("foo_t_") == 8)
+assert(ffi.sizeof(ffi.typeof("struct foo_")) == 8)
+assert(ffi.sizeof(ffi.typeof("foo_t_")) == 8)
+ffi.cdef("struct foo_;")
+fails(ffi.cdef, "struct foo_ {};")
+fails(ffi.cdef, "union foo_;")
+fails(ffi.cdef, "union foo_ {};")
+fails(ffi.cdef, "enum foo_;")
+fails(ffi.cdef, "enum foo_ { ZZZ1 };")
+end
 
-local P = ffi.sizeof("void *")
-local A = (ffi.arch == "x86" and not ffi.abi("win")) and 4 or 8
-
+do --- FFI struct alignof and sizeof
 checktypes{
   0,	1,	"struct {}",
   1,	1,	"struct { char x; }",
@@ -59,9 +66,9 @@ checktypes{
   P*4,	P,	"struct { char x,*y,**z,a,b,c,d; }",
   64,	4,	"struct { struct { struct { struct { int x,y; } a,b; } a,b; } a,b; }",
   4,	4,	"struct { struct { struct { struct { int x; }; }; }; }",
-  8,	4,	"struct { struct foo; }",
-  8,	4,	"struct { foo_t; }",
-  8,	8,	"struct __attribute__((aligned(sizeof(foo_t)))) { int a; }",
+  8,	4,	"struct { struct foo_ q; }",
+  8,	4,	"struct { foo_t_ q; }",
+  8,	8,	"struct __attribute__((aligned(sizeof(foo_t_)))) { int a; }",
   6,	2,	"struct { char a; char x; short y; char z; char c; }",
   10,	2,	"struct { char a; struct { char x; short y; char z; } b; char c; }",
   8,	A,	"struct { double a; }",
@@ -77,7 +84,9 @@ checktypes{
   16,	16,	"struct { float __attribute__((vector_size(16))) a; }",
   32,	16,	"struct { int a; float __attribute__((vector_size(16))) b; }",
 }
+end
 
+do --- FFI union size and alignment
 checktypes{
   0,	1,	"union {}",
   1,	1,	"union { char x; }",
@@ -106,8 +115,9 @@ checktypes{
   16,	16,	"union { float __attribute__((vector_size(16))) a; }",
   16,	16,	"union { int a; float __attribute__((vector_size(16))) b; }",
 }
+end
 
-do
+do --- FFI offsetof
   local ct
   ct = ffi.typeof("struct { int a; char b; short c; int d; }")
   assert(ffi.offsetof(ct, "a") == 0)
@@ -129,6 +139,7 @@ do
   assert(ffi.offsetof(ct, "b") == A)
 end
 
+do --- Invalid FFI declarations rejected
 checkfail{
   "struct { int :; }",
   "struct { int a:; }",
@@ -144,7 +155,9 @@ checkfail{
   "struct { int a[2]:2; }",
   "struct { void a:2; }",
 }
+end
 
+do --- FFI bitfield size and alignment
 checktypes{
   4,	4,	"struct { unsigned a:1; }",
   4,	4,	"struct { unsigned a:1, b:1, c:1; }",
@@ -163,6 +176,7 @@ checktypes{
   1,	1,	"struct { char a:1; _Bool b:1; }",
   1,	1,	"struct { char a:1; signed char b:1; unsigned char c:1; }",
 }
+end
 
 -- NYI: bit fields > 32 bit
 -- local L = ffi.alignof("struct { long long a; }")
@@ -170,7 +184,7 @@ checktypes{
 --   L,	L,	"struct { long long a:1; }",
 -- }
 
--- Bit field packing.
+do --- Bit field packing.
 checktypes{
   1,	1,	"struct { _Bool a:1, b:1, c:1; }",
   4,	4,	"struct { short a:9; int b:9; char c; }",
@@ -197,8 +211,9 @@ checktypes{
   6,	2,	"struct __attribute__((packed)) { _Bool a:1; int b __attribute((aligned(2))); }",
   6,	2,	"struct __attribute__((packed)) { _Bool a:1; int b __attribute((aligned(2))) __attribute((packed)); }",
 }
+end
 
-do
+do --- #pragma pack
   ffi.cdef[[
     struct foo_packorig { char a; int b; short c; };
     #pragma pack(1)
@@ -236,7 +251,7 @@ do
   assert(ffi.sizeof("struct foo_packpop2") == 12)
 end
 
-do
+do --- Alignment attributes
   ffi.cdef[[
     #pragma pack(2)
     struct foo_packalign8 {

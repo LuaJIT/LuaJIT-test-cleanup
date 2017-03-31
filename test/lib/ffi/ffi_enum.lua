@@ -1,8 +1,8 @@
 
 local ffi = require("ffi")
 
-dofile("../common/ffi_util.inc")
-
+local ffi_util = require("common.ffi_util")
+local fails = ffi_util.fails
 ffi.cdef[[
 typedef enum enum_i { FOO_I = -1, II = 10 } enum_i;
 typedef enum enum_u { FOO_U = 1, UU = 10 } enum_u;
@@ -13,9 +13,9 @@ int call_i_ei(enum_i a) asm("call_i");
 int call_i_eu(enum_u a) asm("call_i");
 ]]
 
-local C = ffi.load("../clib/ctest")
+local C = ffi.load("src/libctest.so")
 
-do
+do --- Enum comparison to strings and integers
 
   local t = ffi.new("enum_i[100]")
   for i=0,99 do t[i] = "II" end
@@ -42,16 +42,17 @@ do
   for i=0,99 do assert(t[i] ~= u[i]) end
 end
 
-do
+do --- Enum comparison to strings
   for i=0,99 do assert(C.call_ei_i(9) == "II") end
   for i=0,99 do assert(C.call_eu_i(9) == "UU") end
   for i=0,99 do assert(C.call_i_ei("II") == 11) end
   for i=0,99 do assert(C.call_i_eu("UU") == 11) end
 end
 
-do
+do --- FFI callbacks returning enums
   local f = ffi.cast("bool (*)(enum_i)", function(e) return e == "II" end)
   assert(f("II"))
   assert(not f(0))
+  f:free()
 end
 

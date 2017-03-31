@@ -3,8 +3,7 @@ local wrap = coroutine.wrap
 local resume = coroutine.resume
 local yield = coroutine.yield
 
--- Test stack overflow handling on return from coroutine.
-do
+do --- Test stack overflow handling on return from coroutine 1.
   wrap(function()
     local co = create(function()
       yield(string.byte(string.rep(" ", 100), 1, 100))
@@ -13,7 +12,7 @@ do
   end)()
 end
 
-do
+do --- Coroutine yield test 1
   wrap(function()
     local f = wrap(function()
       yield(string.byte(string.rep(" ", 100), 1, 100))
@@ -22,7 +21,7 @@ do
   end)()
 end
 
-do
+do --- Coroutine yield test 2
   local function cogen(x)
     return wrap(function(n) repeat x = x+n; n = yield(x) until false end),
 	   wrap(function(n) repeat x = x*n; n = yield(x) until false end)
@@ -33,7 +32,7 @@ do
   assert(d(b(c(a(d(b(c(a(1)))))))) == 168428160)
 end
 
-do
+do --- Coroutine yield test 3
   local function verify(what, expect, ...)
     local got = {...}
     for i=1,100 do
@@ -59,7 +58,7 @@ do
   verify("resume end", { true, "end" }, resume(co, "again"))
 end
 
-do
+do --- Coroutine yield test 4
   local function verify(expect, func, ...)
     local co = create(func)
     for i=1,100 do

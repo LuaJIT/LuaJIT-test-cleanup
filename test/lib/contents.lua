@@ -19,7 +19,12 @@ local function check(m, expected, exclude)
 end
 
 do --- base
-  check(_G, "_G:_VERSION:arg:assert:collectgarbage:coroutine:debug:dofile:error:getmetatable:io:ipairs:load:loadfile:math:next:os:package:pairs:pcall:print:rawequal:rawget:rawset:require:select:setmetatable:string:table:tonumber:tostring:type:xpcall", "rawlen:bit:bit32:jit:gcinfo:setfenv:getfenv:loadstring:unpack:module:newproxy")
+  check(_G, "_G:_VERSION:arg:assert:collectgarbage:compat52" ..
+            ":coroutine:cpptest:ctest:" ..
+            "debug:dofile:error:getmetatable:io:ipairs:load:loadfile:" ..
+            "math:next:os:package:pairs:pcall:print:rawequal:rawget:rawset:" ..
+            "require:select:setmetatable:string:table:tonumber:tostring:type:xpcall",
+            "rawlen:bit:bit32:jit:gcinfo:setfenv:getfenv:loadstring:unpack:module:newproxy")
 end
 
 do --- pre-5.2 base +lua<5.2
@@ -54,8 +59,7 @@ do --- math
   check(math, "abs:acos:asin:atan:atan2:ceil:cos:cosh:deg:exp:floor:fmod:frexp:huge:ldexp:log:max:min:modf:pi:pow:rad:random:randomseed:sin:sinh:sqrt:tan:tanh", "log10:mod")
 end
 
-do --- pre-5.2 math +lua<5.2 -compat5.2
-  assert(math.mod)
+do --- pre-5.2 math +lua<5.1 -compat5.2
   assert(math.log10)
 end
 
@@ -66,18 +70,11 @@ end
 
 do --- string
   check(string, "byte:char:dump:find:format:gmatch:gsub:len:lower:match:rep:reverse:sub:upper", "gfind")
-end
-
-do --- pre-5.2 string +lua<5.2 -compat5.2
-  assert(string.gfind)
-end
-
-do --- 5.2 string +lua>=5.2
   assert(not string.gfind)
 end
 
 do --- pre-5.2 table +lua<5.2
-  check(table, "concat:foreach:foreachi:getn:insert:maxn:remove:sort", "pack:unpack:setn:new")
+  check(table, "concat:foreach:foreachi:getn:insert:maxn:move:remove:sort", "pack:unpack:setn:new")
 end
 
 do --- 5.2 table +lua>=5.2
@@ -139,7 +136,8 @@ do --- package.loaded
       loaded[k] = v
     end
   end
-  check(loaded, "_G:coroutine:debug:io:math:os:package:string:table", "bit:bit32:common:ffi:jit:table.new")
+  check(loaded, "_G:coroutine:cpptest:ctest:debug:io:math:os:package:string:table",
+                "bit:bit32:common:ffi:jit:table.new")
 end
 
 do --- bit +bit

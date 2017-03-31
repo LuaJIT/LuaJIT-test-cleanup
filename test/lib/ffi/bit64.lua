@@ -7,7 +7,7 @@ local shl, shr, sar = bit.lshift, bit.rshift, bit.arshift
 local rol, ror = bit.rol, bit.ror
 
 ffi.cdef[[
-typedef enum { ZZI = -1 } ienum_t;
+typedef enum { ZZI = -1 } ienum_t_;
 typedef enum { ZZU } uenum_t;
 ]]
 
@@ -32,7 +32,7 @@ do --- smoke tohex
 end
 
 do --- tobit/band assorted C types
-  for _,tp in ipairs{"int", "ienum_t", "uenum_t", "int64_t", "uint64_t"} do
+  for _,tp in ipairs{"int", "ienum_t_", "uenum_t", "int64_t", "uint64_t"} do
     local x = ffi.new(tp, 10)
     local y = tobit(x)
     local z = band(x)

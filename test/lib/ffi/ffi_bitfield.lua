@@ -1,19 +1,16 @@
 local ffi = require("ffi")
+local x = ffi.new([[
+union {
+  uint32_t u;
+  struct { int a:10,b:10,c:11,d:1; };
+  struct { unsigned int e:10,f:10,g:11,h:1; };
+  struct { int8_t i:4,j:5,k:5,l:3; };
+  struct { _Bool b0:1,b1:1,b2:1,b3:1; };
+}
+]])
 
-dofile("../common/ffi_util.inc")
 
-do
-  local x = ffi.new([[
-    union {
-      uint32_t u;
-      struct { int a:10,b:10,c:11,d:1; };
-      struct { unsigned int e:10,f:10,g:11,h:1; };
-      struct { int8_t i:4,j:5,k:5,l:3; };
-      struct { _Bool b0:1,b1:1,b2:1,b3:1; };
-    }
-  ]])
-
-  -- bitfield access
+do --- Bitfield acess
   x.u = 0xffffffff
   assert(x.a == -1 and x.b == -1 and x.c == -1 and x.d == -1)
   assert(x.e == 1023 and x.f == 1023 and x.g == 2047 and x.h == 1)
@@ -43,8 +40,9 @@ do
     assert(x.i == -2 and x.j == -6 and x.k == 1 and x.l == -2)
     assert(x.b0 == true and x.b1 == true and x.b2 == true and x.b3 == false)
   end
+end
 
-  -- bitfield insert
+do --- bitfield insert
   x.u = 0xffffffff
   x.a = 0
   if ffi.abi("le") then
@@ -73,8 +71,9 @@ do
   else
     assert(x.u == 0x003ff000)
   end
+end
 
-  -- cumulative bitfield insert
+do --- cumulative bitfield insert
   x.u = 0xffffffff
   if ffi.abi("le") then
     x.a = -392; x.b = 277; x.c = 291; x.d = 0
@@ -106,3 +105,12 @@ do
 
 end
 
+do --- bitfield JIT compilation
+  local bf = ffi.new'struct { int x : 2; int y : 30; }'
+  bf.x = 1
+  bf.y = 20
+  for i = 1, 100 do
+    assert(bf.x == 1)
+    assert(bf.y == 20)
+  end
+end

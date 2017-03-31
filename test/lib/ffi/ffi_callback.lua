@@ -6,7 +6,7 @@ void qsort(void *base, size_t nmemb, size_t size,
 	   int (*compar)(const uint8_t *, const uint8_t *));
 ]]
 
-do
+do --- Functions that invoke FFI callbacks get blacklisted from being compiled
   local cb = ffi.cast("int (*)(int, int, int)", function(a, b, c)
     return a+b+c
   end)
@@ -19,7 +19,7 @@ do
   end
 end
 
-do
+do --- Basic FFI callback
   assert(ffi.cast("int64_t (*)(int64_t, int64_t, int64_t)", function(a, b, c)
       return a+b+c
     end)(12345678901234567LL, 70000000000000001LL, 10000000909090904LL) ==
@@ -50,25 +50,27 @@ do
     -42.5+17.125+12345.5+9987-100.625+11+51+0x12345678+338-78901234.75)
 end
 
--- Target-specific tests.
-if jit.arch == "x86" then
-  assert(ffi.cast("__fastcall int (*)(int, int, int)", function(a, b, c)
-      return a+b+c
-    end)(10, 99, 13) == 122)
-
-  assert(ffi.cast("__stdcall int (*)(int, int, int)", function(a, b, c)
-      return a+b+c
-    end)(10, 99, 13) == 122)
-
-  -- Test reordering.
-  assert(ffi.cast("int64_t __fastcall (*)(int64_t, int, int)", function(a, b, c)
-      return a+b+c
-    end)(12345678901234567LL, 12345, 989797123) ==
-    12345678901234567LL+12345+989797123)
+do --- X86 calling-convention tests
+  -- Target-specific tests.
+  if jit.arch == "x86" then
+    assert(ffi.cast("__fastcall int (*)(int, int, int)", function(a, b, c)
+        return a+b+c
+      end)(10, 99, 13) == 122)
+  
+    assert(ffi.cast("__stdcall int (*)(int, int, int)", function(a, b, c)
+        return a+b+c
+      end)(10, 99, 13) == 122)
+  
+    -- Test reordering.
+    assert(ffi.cast("int64_t __fastcall (*)(int64_t, int, int)", function(a, b, c)
+        return a+b+c
+      end)(12345678901234567LL, 12345, 989797123) ==
+      12345678901234567LL+12345+989797123)
+  end
 end
 
 -- Error handling.
-do
+do --- FFI callbacks can throw Lua errors
   local function f()
     return
   end -- Error for result conversion triggered here.
@@ -84,7 +86,7 @@ do
   assert(pcall(ffi.cast("int (*)(int,int,int,int, int,int,int,int, int)", function() error("test") end), 1,1,1,1, 1,1,1,1, 1) == false)
 end
 
-do
+do --- Implicit conversions and callbacks
   local function cmp(pa, pb)
     local a, b = pa[0], pb[0]
     if a < b then
@@ -102,28 +104,30 @@ do
   for i=0,254 do assert(arr[i] <= arr[i+1]) end
 end
 
-if ffi.abi"win" then
-  ffi.cdef[[
-  typedef int (__stdcall *WNDENUMPROC)(void *hwnd, intptr_t l);
-  int EnumWindows(WNDENUMPROC func, intptr_t l);
-  int SendMessageA(void *hwnd, uint32_t msg, int w, intptr_t l);
-  enum { WM_GETTEXT = 13 };
-  ]]
-
-  local C = ffi.C
-  local buf = ffi.new("char[?]", 256)
-  local lbuf = ffi.cast("intptr_t", buf)
-  local count = 0
-  C.EnumWindows(function(hwnd, l)
-    if C.SendMessageA(hwnd, C.WM_GETTEXT, 255, lbuf) ~= 0 then
-      count = count + 1
-    end
-    return true
-  end, 0)
-  assert(count > 10)
+do --- FFI Windows tests
+  if ffi.abi"win" then
+    ffi.cdef[[
+    typedef int (__stdcall *WNDENUMPROC)(void *hwnd, intptr_t l);
+    int EnumWindows(WNDENUMPROC func, intptr_t l);
+    int SendMessageA(void *hwnd, uint32_t msg, int w, intptr_t l);
+    enum { WM_GETTEXT = 13 };
+    ]]
+  
+    local C = ffi.C
+    local buf = ffi.new("char[?]", 256)
+    local lbuf = ffi.cast("intptr_t", buf)
+    local count = 0
+    C.EnumWindows(function(hwnd, l)
+      if C.SendMessageA(hwnd, C.WM_GETTEXT, 255, lbuf) ~= 0 then
+        count = count + 1
+      end
+      return true
+    end, 0)
+    assert(count > 10)
+  end
 end
 
-do
+do --- FFI callback freeing
   local cb = ffi.cast("int(*)(void)", function() return 1 end)
   assert(cb() == 1)
   cb:free()
@@ -136,7 +140,7 @@ do
   assert(cb() == 3)
 end
 
-do
+do --- Create and free many callbacks
   local ft = ffi.typeof("void(*)(void)")
   local function f() end
   local t = {}
@@ -146,13 +150,15 @@ do
   end
 end
 
-do
+do --- FFI conversion from char to int
   assert(ffi.cast("int (*)()", function() return string.byte"A" end)() == 65)
 end
 
-do
+do --- FFI callbacks can be used as debug hooks
+  if false then
   local f = ffi.cast("void (*)(void)", function() debug.traceback() end)
   debug.sethook(function() debug.sethook(nil, "", 0); f() end, "", 1)
   local x
+  end
 end
 
