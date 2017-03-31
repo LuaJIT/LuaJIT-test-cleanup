@@ -59,8 +59,7 @@ do --- math
   check(math, "abs:acos:asin:atan:atan2:ceil:cos:cosh:deg:exp:floor:fmod:frexp:huge:ldexp:log:max:min:modf:pi:pow:rad:random:randomseed:sin:sinh:sqrt:tan:tanh", "log10:mod")
 end
 
-do --- pre-5.2 math +lua<5.2 -compat5.2
-  assert(math.mod)
+do --- pre-5.2 math +lua<5.1 -compat5.2
   assert(math.log10)
 end
 
@@ -71,13 +70,6 @@ end
 
 do --- string
   check(string, "byte:char:dump:find:format:gmatch:gsub:len:lower:match:rep:reverse:sub:upper", "gfind")
-end
-
-do --- pre-5.2 string +lua<5.2 -compat5.2
-  assert(string.gfind)
-end
-
-do --- 5.2 string +lua>=5.2
   assert(not string.gfind)
 end
 

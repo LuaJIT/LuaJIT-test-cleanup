@@ -25,3 +25,5 @@ ffi_new.lua +ffi
 ffi_parse_array.lua +ffi
 ffi_parse_basic.lua +ffi
 ffi_jit_call.lua +ffi
+ffi_parse_struct.lua +ffi
+ffi_parse_cdef.lua +ffi

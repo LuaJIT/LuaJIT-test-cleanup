@@ -25,11 +25,11 @@ end
 
 do --- FFI array typedef sizeof
   ffi.cdef([[
-    typedef int foo1_t[10];
-    typedef foo1_t foo2_t[5];
+    typedef int foo1_t_[10];
+    typedef foo1_t_ foo2_t_[5];
   ]])
-  assert(ffi.sizeof("foo1_t") == 40)
-  assert(ffi.sizeof("foo2_t") == 200)
+  assert(ffi.sizeof("foo1_t_") == 40)
+  assert(ffi.sizeof("foo2_t_") == 200)
 end
 
 

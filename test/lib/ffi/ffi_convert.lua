@@ -33,9 +33,9 @@ typedef struct arrinc_t {
   int a[];
 } arrinc_t;
 
-typedef enum uenum_t {
+typedef enum uenum_t_ {
   UE0, UE71 = 71, UE72
-} uenum_t;
+} uenum_t_;
 
 typedef enum ienum_t {
   IE0, IEM12 = -12, IEM11
@@ -80,7 +80,7 @@ typedef struct baz_t {
   int si_guard;
   nest_t sn;
   uni_t ui;
-  uenum_t ue;
+  uenum_t_ ue;
   ienum_t ie;
 } baz_t;
 
@@ -438,10 +438,10 @@ do --- string converted to enum
   assert(x.ue == 72)
   x.ie = -1
   assert(x.ie == -1)
-  x.ie = "IE0"
-  assert(x.ie == 0)
   x.ie = "IEM11"
   assert(x.ie == -11)
+  x.ie = "IE0"
+  assert(x.ie == 0)
 
   x.pi = x.pi
 end
