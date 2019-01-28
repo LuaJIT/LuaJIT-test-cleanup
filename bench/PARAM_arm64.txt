@@ -12,7 +12,7 @@ mandelbrot-bit 5000
 md5 15000
 nbody 1e6
 nsieve 90
-nsieve-bit 90
+nsieve-bit 15
 nsieve-bit-fp 9
 partialsums 2e6
 pidigits-nogmp 2000
