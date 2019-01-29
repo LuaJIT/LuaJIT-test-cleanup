@@ -54,13 +54,16 @@ do --- math
   check(math, "abs:acos:asin:atan:atan2:ceil:cos:cosh:deg:exp:floor:fmod:frexp:huge:ldexp:log:max:min:modf:pi:pow:rad:random:randomseed:sin:sinh:sqrt:tan:tanh", "log10:mod")
 end
 
-do --- pre-5.2 math +lua<5.2 -compat5.2
+do --- pre-5.1 math +lua<5.1 -compat5.1
   assert(math.mod)
   assert(math.log10)
 end
 
-do --- 5.2 math +lua>=5.2
+do --- 5.1 math +lua>=5.1
   assert(not math.mod)
+end
+
+do --- 5.2 math +lua>=5.2
   assert(not math.log10)
 end
 
@@ -68,15 +71,15 @@ do --- string
   check(string, "byte:char:dump:find:format:gmatch:gsub:len:lower:match:rep:reverse:sub:upper", "gfind")
 end
 
-do --- pre-5.2 string +lua<5.2 -compat5.2
+do --- pre-5.1 string +lua<5.1 -compat5.1
   assert(string.gfind)
 end
 
-do --- 5.2 string +lua>=5.2
+do --- 5.1 string +lua>=5.1
   assert(not string.gfind)
 end
 
-do --- pre-5.2 table +lua<5.2
+do --- pre-5.1 table +lua<5.1
   check(table, "concat:foreach:foreachi:getn:insert:maxn:remove:sort", "pack:unpack:setn:new")
 end
 
