@@ -48,11 +48,15 @@ local function readseq()
   return string.upper(table.concat(lines, "", 1, ln))
 end
 
+local N = tonumber(arg and arg[1]) or 0
+
 local seq = readseq()
-frequency(seq, 1)
-frequency(seq, 2)
-count(seq, "GGT")
-count(seq, "GGTA")
-count(seq, "GGTATT")
-count(seq, "GGTATTTTAATT")
-count(seq, "GGTATTTTAATTTATAGT")
+for i=1,N do
+  frequency(seq, 1)
+  frequency(seq, 2)
+  count(seq, "GGT")
+  count(seq, "GGTA")
+  count(seq, "GGTATT")
+  count(seq, "GGTATTTTAATT")
+  count(seq, "GGTATTTTAATTTATAGT")
+end
