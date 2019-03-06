@@ -1,5 +1,5 @@
 
-local n = tonumber(arg[1])
+local n = tonumber(arg[1]) or 1e5
 local function pr(fmt, x) io.write(string.format(fmt, x)) end
 
 local a1, a2, a3, a4, a5, a6, a7, a8, a9, alt = 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
