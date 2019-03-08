@@ -1,22 +1,26 @@
+CC=gcc
+
 ifndef LUA_BIN
-	LUA_BIN_NAME = ./bench
-	LUA_ARG = $(patsubst %.lua,%,$^)
-	LUA_FILE_ARG = -a
+BENCH_BIN = luajit-bench
+LUA_BIN_NAME = ./$(BENCH_BIN)
+LUA_ARG = $(patsubst %.lua,%,$^)
+LUA_FILE_ARG = -a
 else
-	# Assume that we are calling the benchmark scripts directly using a
-	# standard interpreter.  Use I/O redirection for file inputs and to
-	# dump script output.
-	LUA_ARG = $^ > /dev/null
-	LUA_FILE_ARG = <
-	LUA_BIN_NAME = echo $^ && time -f "%U" $(LUA_BIN)
+BENCH_BIN = __unused__
+# Assume that we are calling the benchmark scripts directly using a
+# standard interpreter.  Use I/O redirection for file inputs and to
+# dump script output.
+LUA_ARG = $^ > /dev/null
+LUA_FILE_ARG = <
+LUA_BIN_NAME = echo $^ && time -f "%U" $(LUA_BIN)
 endif
 
-BENCHMARKS = array3d coroutine-ring fasta mandelbrot-bit meteor nsieve-bit \
-	     pidigits-nogmp recursive-fib scimark-fft scimark-sor \
-	     spectral-norm binary-trees euler14-bit k-nucleotide \
-	     mandelbrot nbody nsieve ray revcomp scimark_lib scimark-sparse \
-	     sum-file chameneos fannkuch life md5 nsieve-bit-fp partialsums \
-	     recursive-ack scimark-2010-12-20 scimark-lu series
+BENCHMARKS = array3d binary-trees chameneos coroutine-ring euler14-bit \
+	     fannkuch fasta k-nucleotide life mandelbrot mandelbrot-bit md5 \
+	     meteor nbody nsieve nsieve-bit nsieve-bit-fp partialsums \
+	     pidigits-nogmp ray recursive-ack recursive-fib revcomp \
+	     scimark-2010-12-20 scimark-fft scimark-lu series scimark-sparse \
+	     scimark-sor spectral-norm sum-file
 
 INPUT-k-nucleotide = FASTA_1000000
 INPUT-revcomp = FASTA_1000000
@@ -28,7 +32,32 @@ LUA_CMD = $(LUA_BIN_NAME) $(LUA_ARG) $(input-file-arg)
 
 bench_targets = $(patsubst %,%.result,$(BENCHMARKS))
 
-all: $(bench_targets)
+all: $(BENCH_BIN) $(bench_targets)
 
 %.result: %.lua
 	@$(LUA_CMD)
+
+ifndef LUA_BIN
+# Recipe to build the benchmark binary.  This needs the luajit static library.
+
+ifndef LUAJIT_PATH
+LUAJIT_PATH = ./LuaJIT
+endif
+
+ifdef BENCH_DURATION
+DURATION = -DBENCH_DURATION=$(BENCH_DURATION)
+endif
+
+LUAJIT_A = $(LUAJIT_PATH)/src/libluajit.a
+
+$(BENCH_BIN): $(LUAJIT_PATH)/src/libluajit.a
+	$(CC) main.c $(DURATION) -O3 -c -o main.o -I $(LUAJIT_PATH)/src
+	$(CC) main.o -lpthread $^ -lm -ldl -o $@
+
+# Build the luajit static library if it doesn't exist.
+$(LUAJIT_A):
+	make -C $(LUAJIT_PATH) -j
+
+clean:
+	rm -f $(BENCH_BIN) main.o
+endif
