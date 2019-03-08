@@ -109,7 +109,7 @@ local function create(level, centre, radius)
 end
 
 
-local level, n, ss = tonumber(arg[1]) or 9, tonumber(arg[2]) or 256, 4
+local level, n, ss = tonumber(arg and arg[1]) or 9, tonumber(arg and arg[2]) or 256, 4
 local iss = 1/ss
 local gf = 255/(ss*ss)
 
