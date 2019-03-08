@@ -1,14 +1,14 @@
-ifndef LUAJIT_BIN
-	LUAJIT_BIN_NAME = ./bench
-	LUAJIT_ARG = $(patsubst %.lua,%,$^)
-	LUAJIT_FILE_ARG = -a
+ifndef LUA_BIN
+	LUA_BIN_NAME = ./bench
+	LUA_ARG = $(patsubst %.lua,%,$^)
+	LUA_FILE_ARG = -a
 else
 	# Assume that we are calling the benchmark scripts directly using a
 	# standard interpreter.  Use I/O redirection for file inputs and to
 	# dump script output.
-	LUAJIT_ARG = $^ > /dev/null
-	LUAJIT_FILE_ARG = <
-	LUAJIT_BIN_NAME = echo $^ && time -f "%U" $(LUAJIT_BIN)
+	LUA_ARG = $^ > /dev/null
+	LUA_FILE_ARG = <
+	LUA_BIN_NAME = echo $^ && time -f "%U" $(LUA_BIN)
 endif
 
 BENCHMARKS = array3d coroutine-ring fasta mandelbrot-bit meteor nsieve-bit \
@@ -23,12 +23,12 @@ INPUT-revcomp = FASTA_1000000
 INPUT-sum-file = SUMCOL_1000
 
 input-file = $(INPUT-$(patsubst %.result,%,$@))
-input-file-arg = $(if $(input-file),$(LUAJIT_FILE_ARG) $(input-file),)
-LUAJIT_CMD = $(LUAJIT_BIN_NAME) $(LUAJIT_ARG) $(input-file-arg)
+input-file-arg = $(if $(input-file),$(LUA_FILE_ARG) $(input-file),)
+LUA_CMD = $(LUA_BIN_NAME) $(LUA_ARG) $(input-file-arg)
 
 bench_targets = $(patsubst %,%.result,$(BENCHMARKS))
 
 all: $(bench_targets)
 
 %.result: %.lua
-	@$(LUAJIT_CMD)
+	@$(LUA_CMD)
