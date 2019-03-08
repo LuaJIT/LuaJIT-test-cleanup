@@ -49,9 +49,9 @@ endif
 
 LUAJIT_A = $(LUAJIT_PATH)/src/libluajit.a
 
-$(BENCH_BIN): $(LUAJIT_PATH)/src/libluajit.a
-	$(CC) main.c $(DURATION) -O3 -c -o main.o -I $(LUAJIT_PATH)/src
-	$(CC) main.o -lpthread $^ -lm -ldl -o $@
+$(BENCH_BIN): $(LUAJIT_PATH)/src/libluajit.a main.c Makefile
+	$(CC) main.c $(DURATION) -g -O3 -c -o main.o -I $(LUAJIT_PATH)/src
+	$(CC) main.o -lpthread $< -lm -ldl -o $@
 
 # Build the luajit static library if it doesn't exist.
 $(LUAJIT_A):
