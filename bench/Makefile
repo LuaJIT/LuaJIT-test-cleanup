@@ -1,5 +1,5 @@
 ifndef LUAJIT_BIN
-	LUAJIT_BIN = ./bench
+	LUAJIT_BIN_NAME = ./bench
 	LUAJIT_ARG = $(patsubst %.lua,%,$^)
 	LUAJIT_FILE_ARG = -a
 else
@@ -8,7 +8,7 @@ else
 	# dump script output.
 	LUAJIT_ARG = $^ > /dev/null
 	LUAJIT_FILE_ARG = <
-	LUAJIT_CMD = $(LUAJIT_BIN) $^.lua > /dev/null $(input-file-arg)
+	LUAJIT_BIN_NAME = echo $^ && time -f "%U" $(LUAJIT_BIN)
 endif
 
 BENCHMARKS = array3d coroutine-ring fasta mandelbrot-bit meteor nsieve-bit \
@@ -24,7 +24,7 @@ INPUT-sum-file = SUMCOL_1000
 
 input-file = $(INPUT-$(patsubst %.result,%,$@))
 input-file-arg = $(if $(input-file),$(LUAJIT_FILE_ARG) $(input-file),)
-LUAJIT_CMD = $(LUAJIT_BIN) $(LUAJIT_ARG) $(input-file-arg)
+LUAJIT_CMD = $(LUAJIT_BIN_NAME) $(LUAJIT_ARG) $(input-file-arg)
 
 bench_targets = $(patsubst %,%.result,$(BENCHMARKS))
 
