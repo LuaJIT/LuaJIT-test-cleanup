@@ -183,7 +183,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	/* Ignore all benchmark prints to stdout.  */
+	/* Ignore all benchmark prints to stdout.  We retain stdout so that we
+	 * can print the score in the end. */
 	int out_copy = dup(1);
 	close(1);
 	int out = open ("/dev/null", O_WRONLY | O_CLOEXEC);
