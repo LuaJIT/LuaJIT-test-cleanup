@@ -31,5 +31,4 @@ bench_targets = $(patsubst %,%.result,$(BENCHMARKS))
 all: $(bench_targets)
 
 %.result: %.lua
-	echo "Running $(LUAJIT_CMD)"
 	@$(LUAJIT_CMD)
