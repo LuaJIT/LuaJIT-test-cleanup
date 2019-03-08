@@ -6,13 +6,12 @@ LUA_BIN_NAME = ./$(BENCH_BIN)
 LUA_ARG = $(patsubst %.lua,%,$^)
 LUA_FILE_ARG = -a
 else
-BENCH_BIN = __unused__
 # Assume that we are calling the benchmark scripts directly using a
 # standard interpreter.  Use I/O redirection for file inputs and to
 # dump script output.
 LUA_ARG = $^ > /dev/null
 LUA_FILE_ARG = <
-LUA_BIN_NAME = echo $^ && time -f "%U" $(LUA_BIN)
+LUA_BIN_NAME = echo -n "$^: " && time -f "%U" $(LUA_BIN)
 endif
 
 BENCHMARKS = array3d binary-trees chameneos coroutine-ring euler14-bit \
