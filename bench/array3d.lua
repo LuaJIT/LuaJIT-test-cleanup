@@ -48,7 +48,7 @@ local function array_new(nx, ny, nz, packed)
   }
 end
 
-local dim = tonumber(arg and arg[1]) or 300 -- Array dimension dim^3
+local dim = tonumber(arg and arg[1]) or 30 -- Array dimension dim^3
 local packed = arg and arg[2] == "packed"   -- Packed image or flat
 local arr = array_new(dim, dim, dim, packed)
 
