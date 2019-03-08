@@ -49,6 +49,9 @@ local function readseq(f)
   return string.upper(table.concat(lines, "", 1, ln))
 end
 
+-- If we are called through a lua_pcall as a chunk, we need to fix up args.
+if not arg then arg = {...} end
+
 local seq = readseq(arg and arg[1])
 frequency(seq, 1)
 frequency(seq, 2)
