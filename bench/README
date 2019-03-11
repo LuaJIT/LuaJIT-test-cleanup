@@ -1,12 +1,17 @@
 Instructions on running the benchmark
 =====================================
 
-This benchmark can be run in two modes, either as a static linked against
+This benchmark can be run in two modes, either as a program linked against
 libluajit.a or by running the scripts with an external lua command.  The
-results of both modes are not comparable.
+results of both modes are similar but not comparable due to the difference in
+precision of timings in both cases.  In both cases, higher number is better and
+the output is in the following format:
 
-Statically linked benchmark
----------------------------
+
+  <benchmark name>:<total executions>:<executions per second>
+
+Benchmark binary
+----------------
 
 Invoke the benchmark as follows:
 
@@ -17,9 +22,6 @@ so:
 
     make BENCH_DURATION=20 LUAJIT_PATH={{Path to LuaJIT sources}}
 
-The results printed are the number of invocations of each benchmark and the
-rate per second.  Higher is better.
-
 Benchmarking an external lua command
 ------------------------------------
 
@@ -27,9 +29,10 @@ Invoke the benchmark as follows:
 
     make LUA_BIN={{Your lua/luajit bin}}
 
-This prints the output as the time spent executing the benchmark.  Less is
-better.
+LIMITATION
+----------
 
-TODO: The external lua benchmark needs to be scaled so that the numbers are
-meaningful since most benchmarks finish in 0.00 seconds.  The PARAM files help,
-but they're not integrated into this workflow yet.
+Benchmarking using an external lua command currently has very low resolution
+timing (milliseconds) compared to the binary, which uses clock_gettime and
+hence has nanosecond resolution.  As a result, one cannot reasonably compare
+results using the benchmark binary with that of the script.

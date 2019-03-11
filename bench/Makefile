@@ -1,17 +1,16 @@
 CC=gcc
 
+LUA_FILE_ARG = -a
+LUA_ARG = $(patsubst %.lua,%,$^)
+
 ifndef LUA_BIN
 BENCH_BIN = luajit-bench
 LUA_BIN_NAME = ./$(BENCH_BIN)
-LUA_ARG = $(patsubst %.lua,%,$^)
-LUA_FILE_ARG = -a
 else
-# Assume that we are calling the benchmark scripts directly using a
-# standard interpreter.  Use I/O redirection for file inputs and to
-# dump script output.
-LUA_ARG = $^ > /dev/null
-LUA_FILE_ARG = <
-LUA_BIN_NAME = echo -n "$^: " && time -f "%U" $(LUA_BIN)
+ifdef BENCH_DURATION
+BENCH_ARG = -t $(BENCH_DURATION)
+endif
+LUA_BIN_NAME = $(LUA_BIN) luajit-bench.lua $(BENCH_ARG)
 endif
 
 BENCHMARKS = array3d binary-trees chameneos coroutine-ring euler14-bit \
@@ -21,6 +20,7 @@ BENCHMARKS = array3d binary-trees chameneos coroutine-ring euler14-bit \
 	     scimark-2010-12-20 scimark-fft scimark-lu series scimark-sparse \
 	     scimark-sor spectral-norm sum-file
 
+# Specify benchmarks that need input files.
 INPUT-k-nucleotide = FASTA_1000000
 INPUT-revcomp = FASTA_1000000
 INPUT-sum-file = SUMCOL_1000
