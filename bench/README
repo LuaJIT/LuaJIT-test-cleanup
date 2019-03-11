@@ -1,0 +1,38 @@
+Instructions on running the benchmark
+=====================================
+
+This benchmark can be run in two modes, either as a program linked against
+libluajit.a or by running the scripts with an external lua command.  The
+results of both modes are similar but not comparable due to the difference in
+precision of timings in both cases.  In both cases, higher number is better and
+the output is in the following format:
+
+
+  <benchmark name>:<total executions>:<executions per second>
+
+Benchmark binary
+----------------
+
+Invoke the benchmark as follows:
+
+    make LUAJIT_PATH={{Path to LuaJIT sources}}
+
+You can change the benchmark duration using the BENCH_DURATION variable like
+so:
+
+    make BENCH_DURATION=20 LUAJIT_PATH={{Path to LuaJIT sources}}
+
+Benchmarking an external lua command
+------------------------------------
+
+Invoke the benchmark as follows:
+
+    make LUA_BIN={{Your lua/luajit bin}}
+
+LIMITATION
+----------
+
+Benchmarking using an external lua command currently has very low resolution
+timing (milliseconds) compared to the binary, which uses clock_gettime and
+hence has nanosecond resolution.  As a result, one cannot reasonably compare
+results using the benchmark binary with that of the script.

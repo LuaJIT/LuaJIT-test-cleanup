@@ -30,25 +30,29 @@ local function frequency(seq, k)
   io.write("\n")
 end
 
-local function readseq()
+local function readseq(f)
   local sub = string.sub
-  for line in io.lines() do
-    if sub(line, 1, 1) == ">" and sub(line, 2, 6) == "THREE" then break end
-  end
-  local lines, ln = {}, 0
-  for line in io.lines() do
-    local c = sub(line, 1, 1)
-    if c == ">" then
-      break
-    elseif c ~= ";" then
-      ln = ln + 1
-      lines[ln] = line
+  local lines, ln, seqstarted = {}, 0, false
+  for line in io.lines(f) do
+    if not seqstarted then
+      if sub(line, 1, 1) == ">" and sub(line, 2, 6) == "THREE" then seqstarted = true end
+    else
+      local c = sub(line, 1, 1)
+      if c == ">" then
+        break
+      elseif c ~= ";" then
+        ln = ln + 1
+        lines[ln] = line
+      end
     end
   end
   return string.upper(table.concat(lines, "", 1, ln))
 end
 
-local seq = readseq()
+-- If we are called through a lua_pcall as a chunk, we need to fix up args.
+if not arg then arg = {...} end
+
+local seq = readseq(arg and arg[1])
 frequency(seq, 1)
 frequency(seq, 2)
 count(seq, "GGT")

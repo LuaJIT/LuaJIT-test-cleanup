@@ -28,8 +28,10 @@ end
 ]=]
 local writerev = loadstring(wcode)()
 
+if not arg then arg = {...} end
+
 local t, n = {}, 1
-for line in io.lines() do
+for line in io.lines(arg[1]) do
   local c = sub(line, 1, 1)
   if c == ">" then writerev(t, n); io.write(line, "\n"); n = 1
   elseif c ~= ";" then t[n] = line; n = n + 1 end
