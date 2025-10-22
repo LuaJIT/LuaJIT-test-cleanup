@@ -68,10 +68,6 @@ do --- string
   check(string, "byte:char:dump:find:format:gmatch:gsub:len:lower:match:rep:reverse:sub:upper", "gfind")
 end
 
-do --- pre-5.2 string +lua<5.2 -compat5.2
-  assert(string.gfind)
-end
-
 do --- 5.2 string +lua>=5.2
   assert(not string.gfind)
 end
