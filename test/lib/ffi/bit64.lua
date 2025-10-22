@@ -18,7 +18,7 @@ end
 
 do --- smoke band
   assert(tostring(band(1ll, 1, 1ll, -1)) == "1LL")
-  assert(tostring(band(1ll, 1, 1ull, -1)) == "1ULL")
+  assert(tostring(band(1ll, 1, 1ull, -1ll)) == "1ULL")
 end
 
 do --- smoke shl
