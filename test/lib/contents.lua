@@ -55,7 +55,7 @@ do --- math
 end
 
 do --- pre-5.2 math +lua<5.2 -compat5.2
-  assert(math.mod)
+  assert(not math.mod)
   assert(math.log10)
 end
 
