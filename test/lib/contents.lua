@@ -55,7 +55,7 @@ do --- math
 end
 
 do --- pre-5.2 math +lua<5.2 -compat5.2
-  assert(math.mod)
+  assert(not math.mod)
   assert(math.log10)
 end
 
@@ -68,16 +68,12 @@ do --- string
   check(string, "byte:char:dump:find:format:gmatch:gsub:len:lower:match:rep:reverse:sub:upper", "gfind")
 end
 
-do --- pre-5.2 string +lua<5.2 -compat5.2
-  assert(string.gfind)
-end
-
 do --- 5.2 string +lua>=5.2
   assert(not string.gfind)
 end
 
 do --- pre-5.2 table +lua<5.2
-  check(table, "concat:foreach:foreachi:getn:insert:maxn:remove:sort", "pack:unpack:setn:new")
+  check(table, "concat:foreach:foreachi:getn:insert:maxn:move:remove:sort", "pack:unpack:setn:new")
 end
 
 do --- 5.2 table +lua>=5.2

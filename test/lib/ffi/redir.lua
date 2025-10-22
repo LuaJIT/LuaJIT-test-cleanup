@@ -9,9 +9,16 @@ do --- function
 end
 
 do --- variable -windows
-  ffi.cdef[[
-  int redir_bar asm("errno");
-  ]]
+  if (jit.os == "BSD") then
+    -- Use "h_errno" instead, "errno" isn't defined in BSD libc.
+    ffi.cdef[[
+    int redir_bar asm("h_errno");
+    ]]
+  else
+    ffi.cdef[[
+    int redir_bar asm("errno");
+    ]]
+  end
 
   ffi.C.redir_bar = 14
   assert(ffi.C.redir_bar == 14)
